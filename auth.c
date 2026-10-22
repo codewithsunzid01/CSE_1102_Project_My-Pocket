@@ -1,153 +1,139 @@
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h> 
 #include "budget.h"
+#include <ctype.h>
 
-/* Find user by email, return index if found, otherwise -1 */
 int findUserByEmail(const char *email)
- {
+{
     int i;
-    for (i = 0; i < userCount; i++) {
-        if (strcmp(users[i].email, email) == 0) {
-            return i;
-        }
+    for (i = 0; i < userCount; ++i) {
+        if (strcmp(users[i].email, email) == 0) return i;
     }
     return -1;
 }
 
-/* Find user by ID, return index if found, otherwise -1 */
-int findUserById(int userId) {
+int findUserById(int userId)
+{
     int i;
-    for (i = 0; i < userCount; i++) {
-        if (users[i].userId == userId) {
-            return i;
-        }
+    for (i = 0; i < userCount; ++i) {
+        if (users[i].userId == userId) return i;
     }
     return -1;
 }
 
-/* Check email + password, return userId if valid, otherwise -1 */
-int authenticateUser(const char *email, const char *password) {
+int authenticateUser(const char *email, const char *password)
+{
     int index = findUserByEmail(email);
-
-    if (index == -1) {
-        return -1;
-    }
-
-    if (strcmp(users[index].password, password) == 0) {
-        return users[index].userId;
-    }
-
-    return -1;
+    if (index < 0) return -1;
+    return strcmp(users[index].password, password) == 0 ? users[index].userId : -1;
 }
 
-/* Check password strength */
-int isStrongPassword(const char *password) {
-    int hasUpper = 0, hasLower = 0, hasDigit = 0, hasSpecial = 0;
-    int length = strlen(password);
-    int i;
-
-    if (length < 6) {
-        return 0;
+int isStrongPassword(const char *password)
+{
+    int upper = 0, lower = 0, digit = 0, special = 0;
+    size_t i, length = strlen(password);
+    if (length < 6U || length >= MAX_PASSWORD_LEN) return 0;
+    for (i = 0U; i < length; ++i) {
+        unsigned char ch = (unsigned char)password[i];
+        if (isupper(ch)) upper = 1;
+        else if (islower(ch)) lower = 1;
+        else if (isdigit(ch)) digit = 1;
+        else special = 1;
     }
-
-    for (i = 0; password[i] != '\0'; i++) {
-        if (isupper((unsigned char)password[i])) {
-            hasUpper = 1;
-        } else if (islower((unsigned char)password[i])) {
-            hasLower = 1;
-        } else if (isdigit((unsigned char)password[i])) {
-            hasDigit = 1;
-        } else {
-            hasSpecial = 1;
-        }
-    }
-
-    return hasUpper && hasLower && hasDigit && hasSpecial;
+    return upper && lower && digit && special;
 }
 
-/* Register a new user */
-     int registerUser(void ) {
-    char name[MAX_NAME_LEN];
-    char email[MAX_EMAIL_LEN];
-    char password[MAX_PASSWORD_LEN];
+static int nextUserId(void)
+{
+    int i, maximum = 0;
+    for (i = 0; i < userCount; ++i) if (users[i].userId > maximum) maximum = users[i].userId;
+    return maximum + 1;
+}
+
+static void copyInput(char *destination, size_t capacity, const char *source)
+{
+    if (capacity == 0U) return;
+    (void)snprintf(destination, capacity, "%s", source);
+}
+
+int registerUser(void)
+{
+    char *name, *email, *password, *extra;
+    int id, extraChoice;
+    User *user;
 
     if (userCount >= MAX_USERS) {
-        printf("\nUser limit reached. Cannot register more users.\n");
+        puts("User limit reached. Cannot register more users.");
         return -1;
     }
-
-    printf("\n========== USER REGISTRATION ==========\n");
-
-    printf("Enter your name: ");
-    scanf(" %[^\n]", name);
-
-    printf("Enter your email: ");
-    scanf("%s", email);
-
-    if (findUserByEmail(email) != -1) {
-        printf("This email is already registered.\n");
-        return -1;
+    puts("\n========== USER REGISTRATION ==========");
+    name = readLineDynamic("Enter your full name: ");
+    if (name == NULL || name[0] == '\0') { free(name); puts("Name is required."); return -1; }
+    email = readLineDynamic("Enter your email: ");
+    if (email == NULL || email[0] == '\0' || strlen(email) >= MAX_EMAIL_LEN) {
+        free(name); free(email); puts("A valid email under 100 characters is required."); return -1;
+    }
+    if (strchr(email, '@') == NULL || strchr(email, '.') == NULL || findUserByEmail(email) >= 0) {
+        puts("Email is invalid or already registered."); free(name); free(email); return -1;
     }
 
-    while (1) {
-        printf("Create password: ");
-        scanf("%s", password);
-
-        if (strlen(password) < 6) {
-            printf("Warning: Password must be at least 6 characters long.\n");
-            continue;
-        }
-
-        if (!isStrongPassword(password)) {
-            printf("Weak password!\n");
-            printf("Use at least one uppercase letter, one lowercase letter, one digit, and one special character.\n");
-            continue;
-        }
-
-        printf("Strong password accepted.\n");
-        break;
+    for (;;) {
+        password = readLineDynamic("Create password (6+ chars, upper/lower/digit/special): ");
+        if (password == NULL) { free(name); free(email); return -1; }
+        if (isStrongPassword(password)) break;
+        puts("Weak password. Example format: Student@123");
+        free(password);
+    }
+    if (strlen(name) >= MAX_NAME_LEN) {
+        puts("Name is too long (maximum 49 characters).");
+        free(name); free(email); free(password); return -1;
     }
 
-    users[userCount].userId = userCount + 1;
-    strcpy(users[userCount].name, name);
-    strcpy(users[userCount].email, email);
-    strcpy(users[userCount].password, password);
+    id = nextUserId();
+    user = &users[userCount];
+    memset(user, 0, sizeof(*user));
+    user->userId = id;
+    copyInput(user->name, sizeof(user->name), name);
+    copyInput(user->email, sizeof(user->email), email);
+    copyInput(user->password, sizeof(user->password), password);
+    user->monthly_income = 0.0;
+    user->monthly_budget = 0.0;
+    user->savings_goal = 0.0;
+    user->total_expense = 0.0;
+    user->balance = 0.0;
 
-    /* Initialize finance fields */
-    users[userCount].monthly_income = 0.0;
-    users[userCount].monthly_budget = 0.0;
-    users[userCount].savings_goal = 0.0;
-    users[userCount].total_expense = 0.0;
-    users[userCount].balance = 0.0;
+    puts("\nOptional profile information:");
+    puts("1. Phone number  2. Student ID  3. Skip");
+    extraChoice = readInt("Choose: ", 1, 3);
+    if (extraChoice == 1 || extraChoice == 2) {
+        extra = readLineDynamic(extraChoice == 1 ? "Enter phone number: " : "Enter student ID: ");
+        if (extra != NULL) {
+            if (extraChoice == 1) copyInput(user->extra.phone, sizeof(user->extra.phone), extra);
+            else copyInput(user->extra.studentId, sizeof(user->extra.studentId), extra);
+        }
+        free(extra);
+    }
 
-    userCount++;
-
-    printf("Registration successful!\n");
-    printf("Your User ID is: %d\n", users[userCount - 1].userId);
+    ++userCount;
+    saveAllData();
+    printf("\nRegistration successful! Your User ID is %d.\n", id);
+    free(name); free(email); free(password);
+    return id;
 }
 
-/* Login user and return userId if successful, otherwise -1 */
-int loginUser(void) {
-    char email[MAX_EMAIL_LEN];
-    char password[MAX_PASSWORD_LEN];
+int loginUser(void)
+{
+    char *email, *password;
     int userId;
-
-    printf("\n============= USER LOGIN =============\n");
-
-    printf("Enter your email: ");
-    scanf("%s", email);
-
-    printf("Enter your password: ");
-    scanf("%s", password);
-
+    puts("\n============= USER LOGIN =============");
+    email = readLineDynamic("Enter your email: ");
+    if (email == NULL) return -1;
+    password = readLineDynamic("Enter your password: ");
+    if (password == NULL) { free(email); return -1; }
     userId = authenticateUser(email, password);
-
-    if (userId == -1) {
-        printf("Invalid email or password.\n");
+    free(email); free(password);
+    if (userId < 0) {
+        puts("Invalid email or password.");
         return -1;
     }
-
-    printf("Login successful!\n");
+    printf("Login successful. Welcome, %s!\n", users[findUserById(userId)].name);
     return userId;
 }
