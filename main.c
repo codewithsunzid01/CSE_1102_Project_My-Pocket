@@ -1,105 +1,128 @@
-#include <stdio.h>
 #include "budget.h"
+#include <limits.h>
 
 void showMainMenu(void)
 {
-    printf("\n========== MY POCKET ==========\n");
-    printf("1. Register\n");
-    printf("2. Login\n");
-    printf("3. Exit\n");
-    printf("Enter your choice: ");
+    puts("\n========== MYPOCKET: STUDENT BUDGET MANAGEMENT ==========");
+    puts("1. Register\n2. Login\n3. Exit");
+}
+
+void showDashboard(int userId)
+{
+    int index = findUserById(userId);
+    if (index >= 0) printf("\nWelcome, %s (User ID: %d)\n", users[index].name, userId);
+    showFinancialSummary(userId);
 }
 
 void user_menu(int userId)
 {
     int choice;
-
-    while (1)
-    {
-        printf("\n========== DASHBOARD ==========\n");
-        printf("Welcome User ID: %d\n", userId);
-        printf("========== USER FINANCE MENU ==========\n");
-        printf("1. Income\n");
-        printf("2. Budget\n");
-        printf("3. Transactions\n");
-        printf("4. Search & Tokenization\n");
-        printf("5. Reminder\n");
-        printf("6. Logout\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
-
-        switch (choice)
-        {
-            case 1:
-                printf("Income module will be added later.\n");
+    if (!isValidUser(userId)) { puts("Invalid user session."); return; }
+    processRecurringExpenses(userId);
+    for (;;) {
+        int index = findUserById(userId);
+        puts("\n=============== MYPOCKET DASHBOARD ===============");
+        printf("Welcome, %s | User ID: %d | Balance: %.2f BDT\n", users[index].name, userId, users[index].balance);
+        puts("1. Income management");
+        puts("2. Budget management and alerts");
+        puts("3. Add expense / view transactions");
+        puts("4. Search transactions & tokenization");
+        puts("5. Reminders and calendar");
+        puts("6. Recurring / upcoming expenses");
+        puts("7. Financial summary and monthly review");
+        puts("8. Group events and expense sharing");
+        puts("9. Financial planning");
+        puts("10. Logout");
+        choice = readInt("Choose an option: ", 1, 10);
+        switch (choice) {
+            case 1: manageIncome(userId); break;
+            case 2: manageBudget(userId); break;
+            case 3: {
+                int transactionChoice;
+                puts("\n1. Add expense\n2. View all my transactions\n3. View expenses by category\n4. Edit an expense\n5. Back");
+                transactionChoice = readInt("Choose: ", 1, 5);
+                if (transactionChoice == 1) addExpense(userId);
+                else if (transactionChoice == 2) viewTransactions(userId);
+                else if (transactionChoice == 3) viewTransactionsByCategory(userId, promptCategory());
+                else if (transactionChoice == 4) editExpense(userId);
                 break;
-
-            case 2:
-                printf("Budget module will be added later.\n");
+            }
+            case 4: {
+                int searchChoice;
+                puts("\n1. Search my transactions\n2. Tokenization demo\n3. Back");
+                searchChoice = readInt("Choose: ", 1, 3);
+                if (searchChoice == 1) searchTransactions(userId);
+                else if (searchChoice == 2) search_and_tokenization_demo();
                 break;
-
-            case 3:
-                printf("Transaction module will be added later.\n");
+            }
+            case 5: reminder_dashboard(userId); break;
+            case 6: {
+                int recurringChoice;
+                puts("\n1. Add recurring expense\n2. View recurring expenses\n3. View upcoming expenses\n4. Process due expenses now\n5. Back");
+                recurringChoice = readInt("Choose: ", 1, 5);
+                if (recurringChoice == 1) addRecurringExpense(userId);
+                else if (recurringChoice == 2) viewRecurringExpenses(userId);
+                else if (recurringChoice == 3) showUpcomingExpenses(userId);
+                else if (recurringChoice == 4) processRecurringExpenses(userId);
                 break;
-
-            case 4:
-                search_and_tokenization_demo();
+            }
+            case 7: {
+                int reportChoice;
+                puts("\n1. Financial summary\n2. Sector-wise expenses\n3. Monthly review\n4. Back");
+                reportChoice = readInt("Choose: ", 1, 4);
+                if (reportChoice == 1) showFinancialSummary(userId);
+                else if (reportChoice == 2) showSectorWiseExpenses(userId);
+                else if (reportChoice == 3) showMonthlyReview(userId);
                 break;
-
-            case 5:
-                reminder_dashboard(userId);
-                break;
-
-            case 6:
-                printf("Logging out...\n");
-                return;
-
-            default:
-                printf("Invalid choice. Try again.\n");
+            }
+            case 8: event_dashboard(userId); break;
+            case 9: showFinancialPlanning(userId); break;
+            case 10: puts("Logging out..."); return;
+            default: puts("Invalid choice."); break;
         }
     }
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    int choice;
-    int userId;
+    int choice, userId;
+    if (argc > 1) {
+        if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
+            puts("MyPocket - Student Budget Management System\nUsage: mypocket [--help | --version | --stats]");
+            puts("Run without arguments to open the interactive menu.");
+            return 0;
+        }
+        if (strcmp(argv[1], "--version") == 0) { puts("MyPocket 1.0 (C11 lab project)"); return 0; }
+        if (strcmp(argv[1], "--stats") == 0) {
+            loadAllData();
+            printf("Saved users: %d\nTransactions: %d\nBudgets: %d\nEvents: %d\nReminders: %d\nRecurring expenses: %d\n",
+                   userCount, transactionCount, budgetCount, eventCount, reminderCount, recurringCount);
+            return 0;
+        }
+        fprintf(stderr, "Unknown argument: %s\nUse --help for usage.\n", argv[1]);
+        return 1;
+    }
 
-    while (1)
-    {
+    loadAllData();
+    puts("Welcome to MyPocket. Your local data is loaded automatically.");
+    for (;;) {
         showMainMenu();
-        scanf("%d", &choice);
-
-        switch (choice)
-        {
+        choice = readInt("Enter your choice: ", 1, 3);
+        if (choice == INT_MIN) { puts("\nInput closed. Saving data and exiting."); saveAllData(); return 0; }
+        switch (choice) {
             case 1:
                 userId = registerUser();
-                if (userId != -1)
-                {
-                    printf("Registration successful! Redirecting to dashboard...\n");
-                    user_menu(userId);
-                }
+                if (userId >= 0) user_menu(userId);
                 break;
-
             case 2:
                 userId = loginUser();
-                if (userId != -1)
-                {
-                    printf("Login successful! Redirecting to dashboard...\n");
-                    user_menu(userId);
-                }
-                else
-                {
-                    printf("Invalid email or password.\n");
-                }
+                if (userId >= 0) user_menu(userId);
                 break;
-
             case 3:
-                printf("Exiting program...\n");
+                saveAllData();
+                puts("Data saved. Goodbye!");
                 return 0;
-
-            default:
-                printf("Invalid choice. Try again.\n");
+            default: break;
         }
     }
 }
