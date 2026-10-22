@@ -1,3 +1,4 @@
+
 #ifndef BUDGET_H
 #define BUDGET_H
 
@@ -5,10 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stddef.h>
 
-/* =========================
-   CONSTANTS / MACROS
-   ========================= */
 #define MAX_USERS 100
 #define MAX_TRANSACTIONS 1000
 #define MAX_BUDGETS 100
@@ -31,48 +30,16 @@
 #define MAX_TOKEN_LEN 30
 #define MAX_MESSAGE_LEN 100
 
-/* =========================
-   ENUMS
-   ========================= */
-typedef enum {
-    INCOME,
-    EXPENSE,
-    INTERNAL_TRANSACTION
-} TransactionType;
+typedef enum { INCOME, EXPENSE, INTERNAL_TRANSACTION } TransactionType;
+typedef enum { FOOD, TRANSPORT, EDUCATION, MEDICAL, ENTERTAINMENT, SHOPPING, RENT, SAVINGS, OTHERS } CategoryType;
+typedef enum { EQUAL_SPLIT, CUSTOM_SPLIT } SplitType;
+typedef enum { NORMAL_REMINDER, RECURRING_REMINDER } ReminderType;
 
-typedef enum {
-    FOOD,
-    TRANSPORT,
-    EDUCATION,
-    MEDICAL,
-    ENTERTAINMENT,
-    SHOPPING,
-    RENT,
-    SAVINGS,
-    OTHERS
-} CategoryType;
-
-typedef enum {
-    EQUAL_SPLIT,
-    CUSTOM_SPLIT
-} SplitType;
-
-typedef enum {
-    NORMAL_REMINDER,
-    RECURRING_REMINDER
-} ReminderType;
-
-/* =========================
-   UNION
-   ========================= */
 typedef union {
     char phone[20];
     char studentId[20];
 } ExtraInfo;
 
-/* =========================
-   STRUCTURES
-   ========================= */
 typedef struct {
     int userId;
     char name[MAX_NAME_LEN];
@@ -95,6 +62,14 @@ typedef struct {
     double remaining;
 } Budget;
 
+/* Transaction-specific notes demonstrate a union in the transaction model.
+   Only the member matching Transaction.type is active at a time. */
+typedef union {
+    char incomeSource[MAX_DESC_LEN];
+    char expenseNote[MAX_DESC_LEN];
+    char internalNote[MAX_DESC_LEN];
+} TransactionDetails;
+
 typedef struct {
     int transactionId;
     int userId;
@@ -103,6 +78,7 @@ typedef struct {
     double amount;
     char date[MAX_DATE_LEN];
     char description[MAX_DESC_LEN];
+    TransactionDetails details;
 } Transaction;
 
 typedef struct {
@@ -149,6 +125,7 @@ typedef struct {
 typedef struct {
     int eventId;
     char eventName[MAX_TITLE_LEN];
+    char eventDate[MAX_DATE_LEN];
     int createdBy;
     int participantCount;
     EventParticipant participants[MAX_PARTICIPANTS];
@@ -182,41 +159,41 @@ typedef struct {
     int count;
 } TokenList;
 
-/* =========================
-   GLOBAL VARIABLES
-   ========================= */
 extern User users[MAX_USERS];
 extern int userCount;
-
 extern Budget budgets[MAX_BUDGETS];
 extern int budgetCount;
-
 extern Transaction transactions[MAX_TRANSACTIONS];
 extern int transactionCount;
-
 extern Event events[MAX_EVENTS];
 extern int eventCount;
-
 extern Funding fundings[MAX_FUNDINGS];
 extern int fundingCount;
-
 extern Reminder reminders[MAX_REMINDERS];
 extern int reminderCount;
-
 extern RecurringExpense recurringExpenses[MAX_RECURRING];
 extern int recurringCount;
 
-/* =========================
-   MAIN / MENU
-   ========================= */
+/* Main/menu and input helpers */
 void showMainMenu(void);
 void showDashboard(int userId);
 void user_menu(int userId);
 void pauseScreen(void);
+char *readLineDynamic(const char *prompt);
+int readInt(const char *prompt, int minValue, int maxValue);
+double readDouble(const char *prompt, double minValue, double maxValue);
+void getCurrentDate(char *buffer);
+int isValidDate(const char *date);
+int compareDates(const char *date1, const char *date2);
+int daysUntilDate(const char *date);
+void addDaysToDate(char *date, int days);
+const char *categoryToString(CategoryType category);
+const char *transactionTypeToString(TransactionType type);
+const char *splitTypeToString(SplitType type);
+CategoryType promptCategory(void);
+int isValidUser(int userId);
 
-/* =========================
-   AUTHENTICATION
-   ========================= */
+/* Authentication */
 int registerUser(void);
 int loginUser(void);
 int authenticateUser(const char *email, const char *password);
@@ -224,53 +201,39 @@ int findUserById(int userId);
 int findUserByEmail(const char *email);
 int isStrongPassword(const char *password);
 
-/* =========================
-   FILE HANDLING
-   ========================= */
+/* File handling */
 void loadAllData(void);
 void saveAllData(void);
-
 void loadUsers(void);
 void saveUsers(void);
-
 void loadBudgets(void);
 void saveBudgets(void);
-
 void loadTransactions(void);
 void saveTransactions(void);
-
 void loadEvents(void);
 void saveEvents(void);
-
 void loadFundings(void);
 void saveFundings(void);
-
 void loadReminders(void);
 void saveReminders(void);
-
 void loadRecurringExpenses(void);
 void saveRecurringExpenses(void);
 
-/* =========================
-   BUDGET & INCOME MANAGEMENT
-   ========================= */
+/* Budget and income */
 void manageIncome(int userId);
 void manageBudget(int userId);
 void addIncome(int userId, double amount);
 void setBudget(int userId, double amount);
 double calculateRemainingBudget(int userId);
 
-/* =========================
-   EXPENSE & TRANSACTION MANAGEMENT
-   ========================= */
+/* Expenses and transactions */
 void addExpense(int userId);
+void editExpense(int userId);
 void addTransaction(int userId, TransactionType type, CategoryType category, double amount, const char *date, const char *description);
 void viewTransactions(int userId);
 void viewTransactionsByCategory(int userId, CategoryType category);
 
-/* =========================
-   FINANCIAL SUMMARY
-   ========================= */
+/* Financial summary */
 void showFinancialSummary(int userId);
 double calculateTotalIncome(int userId);
 double calculateTotalExpense(int userId);
@@ -278,40 +241,29 @@ double calculateCurrentBalance(int userId);
 double calculateFutureBalance(int userId);
 void showSectorWiseExpenses(int userId);
 double getCategoryExpenseTotal(int userId, CategoryType category);
+void showMonthlyReview(int userId);
 
-/* =========================
-   SEARCH & TOKENIZATION
-   ========================= */
-/* =========================
-   SEARCH & TOKENIZATION
-   ========================= */
+/* Search and tokenization */
 void searchTransactions(int userId);
 TokenList tokenizeString(const char *input, const char *delimiter);
 int stringContainsToken(const char *text, const char *token);
 void search_and_tokenization_demo(void);
 
-
-/* =========================
-   CALENDAR & REMINDERS
-   ========================= */
+/* Calendar and reminders */
 void addReminder(int userId);
 void viewReminders(int userId);
 void markReminderCompleted(int userId);
 void checkUpcomingReminders(int userId);
 void reminder_dashboard(int userId);
 
-/* =========================
-   RECURRING & UPCOMING EXPENSES
-   ========================= */
+/* Recurring and upcoming expenses */
 void addRecurringExpense(int userId);
 void viewRecurringExpenses(int userId);
 void processRecurringExpenses(int userId);
 void showUpcomingExpenses(int userId);
 double calculateUpcomingExpenseTotal(int userId);
 
-/* =========================
-   EVENT MODULE
-   ========================= */
+/* Group event and expense sharing */
 void createEvent(int userId);
 void viewEvents(int userId);
 int findEventById(int eventId);
@@ -320,34 +272,18 @@ void addEventExpense(int eventId);
 void splitExpenseEqual(Event *event, EventExpense *expense);
 void splitExpenseCustom(Event *event, EventExpense *expense);
 void viewEventDetails(int eventId);
+void event_dashboard(int userId);
+double calculateEventNet(int eventId, int userId);
 
-/* =========================
-   FUNDING MODULE
-   ========================= */
+/* Internal funding and transfers */
 void collectFund(int eventId, int collectorUserId);
 void deductFromUser(int userId, double amount);
 void addToUser(int userId, double amount);
 void recordInternalTransaction(int fromUserId, int toUserId, double amount, const char *date, const char *description);
 
-/* =========================
-   BUDGET ALERTS & PLANNING
-   ========================= */
+/* Alerts and planning */
 void checkBudgetAlert(int userId);
 void showFinancialPlanning(int userId);
-
-/* =========================
-   MONTHLY REVIEW & ANALYSIS
-   ========================= */
-void showMonthlyReview(int userId);
-
-/* =========================
-   UTILITY FUNCTIONS
-   ========================= */
-void getCurrentDate(char *buffer);
-const char *categoryToString(CategoryType category);
-const char *transactionTypeToString(TransactionType type);
-const char *splitTypeToString(SplitType type);
-int isValidUser(int userId);
 
 #endif
 
