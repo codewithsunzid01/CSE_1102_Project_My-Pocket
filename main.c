@@ -33,19 +33,21 @@ void user_menu(int userId)
         puts("8. Group events and expense sharing");
         puts("9. Financial planning");
         puts("10. Savings management");
-        puts("11. Logout");
-        choice = readInt("Choose an option: ", 1, 11);
+        puts("11. Edit profile");
+        puts("12. Logout");
+        choice = readInt("Choose an option: ", 1, 12);
         switch (choice) {
             case 1: manageIncome(userId); break;
             case 2: manageBudget(userId); break;
             case 3: {
                 int transactionChoice;
-                puts("\n1. Add expense\n2. View all my transactions\n3. View expenses by category\n4. Edit an expense\n5. Back");
-                transactionChoice = readInt("Choose: ", 1, 5);
+                puts("\n1. Add expense\n2. View all my transactions\n3. View expenses by category\n4. Edit any financial record\n5. Delete a financial record\n6. Back");
+                transactionChoice = readInt("Choose: ", 1, 6);
                 if (transactionChoice == 1) addExpense(userId);
                 else if (transactionChoice == 2) viewTransactions(userId);
                 else if (transactionChoice == 3) viewTransactionsByCategory(userId, promptCategory());
-                else if (transactionChoice == 4) editExpense(userId);
+                else if (transactionChoice == 4) editFinancialTransaction(userId);
+                else if (transactionChoice == 5) deleteFinancialTransaction(userId);
                 break;
             }
             case 4: {
@@ -59,27 +61,31 @@ void user_menu(int userId)
             case 5: reminder_dashboard(userId); break;
             case 6: {
                 int recurringChoice;
-                puts("\n1. Add recurring expense\n2. View recurring expenses\n3. View upcoming expenses\n4. Process due expenses now\n5. Back");
-                recurringChoice = readInt("Choose: ", 1, 5);
+                puts("\n1. Add recurring expense\n2. View recurring expenses\n3. View upcoming expenses\n4. Process due expenses now\n5. Edit recurring expense\n6. Delete recurring expense\n7. Back");
+                recurringChoice = readInt("Choose: ", 1, 7);
                 if (recurringChoice == 1) addRecurringExpense(userId);
                 else if (recurringChoice == 2) viewRecurringExpenses(userId);
                 else if (recurringChoice == 3) showUpcomingExpenses(userId);
                 else if (recurringChoice == 4) processRecurringExpenses(userId);
+                else if (recurringChoice == 5) editRecurringExpense(userId);
+                else if (recurringChoice == 6) deleteRecurringExpense(userId);
                 break;
             }
             case 7: {
                 int reportChoice;
-                puts("\n1. Financial summary\n2. Sector-wise expenses\n3. Monthly review\n4. Back");
-                reportChoice = readInt("Choose: ", 1, 4);
+                puts("\n1. Financial summary\n2. Sector-wise expenses\n3. Monthly review (month-to-month comparison)\n4. Export transactions to CSV\n5. Back");
+                reportChoice = readInt("Choose: ", 1, 5);
                 if (reportChoice == 1) showFinancialSummary(userId);
                 else if (reportChoice == 2) showSectorWiseExpenses(userId);
                 else if (reportChoice == 3) showMonthlyReview(userId);
+                else if (reportChoice == 4) exportTransactionsCsv(userId);
                 break;
             }
             case 8: event_dashboard(userId); break;
             case 9: showFinancialPlanning(userId); break;
-            case 10: manageSavings(userId); break;
-            case 11: puts("Logging out..."); return;
+            case 10: savingsManagement(userId); break;
+            case 11: editProfile(userId); break;
+            case 12: puts("Logging out..."); return;
             default: puts("Invalid choice."); break;
         }
     }
