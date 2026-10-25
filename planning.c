@@ -41,20 +41,17 @@ void showFinancialPlanning(int userId)
         printf("Available balance: %.2f BDT\n", users[index].balance);
         printf("Upcoming recurring expenses: %.2f BDT\n", calculateUpcomingExpenseTotal(userId));
         printf("Projected balance after listed upcoming expenses: %.2f BDT\n", calculateFutureBalance(userId));
-        printf("Savings goal: %.2f BDT\n", users[index].savings_goal);
+        printf("Monthly savings target: %.2f BDT\n", users[index].savings_goal);
         if (users[index].savings_goal > 0.0) {
-            double gap = users[index].savings_goal - users[index].balance;
-            if (gap <= 0.0) puts("Savings goal reached!");
-            else printf("Still needed to reach the goal: %.2f BDT\n", gap);
+            double gap = users[index].savings_goal - (income - expense);
+            if (gap <= 0.0) puts("Monthly savings target reached!");
+            else printf("Still needed this month: %.2f BDT\n", gap);
         }
-        puts("1. Set/update savings goal\n2. View upcoming expenses\n3. Check budget alert\n4. Back");
-        choice = readInt("Choose: ", 1, 4);
-        if (choice == 1) {
-            users[index].savings_goal = readDouble("Enter target savings balance (BDT): ", 0.0, 1000000000000.0);
-            saveAllData();
-            puts("Savings goal saved.");
-        } else if (choice == 2) showUpcomingExpenses(userId);
-        else if (choice == 3) checkBudgetAlert(userId);
+        puts("1. View upcoming expenses\n2. Check budget alert\n3. Back");
+        choice = readInt("Choose: ", 1, 3);
+        if (choice == 1) showUpcomingExpenses(userId);
+        else if (choice == 2) checkBudgetAlert(userId);
         else return;
     }
 }
+
