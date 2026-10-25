@@ -1,3 +1,4 @@
+
 #include "budget.h"
 #include <ctype.h>
 
@@ -136,4 +137,39 @@ int loginUser(void)
     }
     printf("Login successful. Welcome, %s!\n", users[findUserById(userId)].name);
     return userId;
+}
+
+
+void editProfile(int userId)
+{
+    int index = findUserById(userId);
+    char *name = NULL, *email = NULL, *password = NULL;
+    if (index < 0) { puts("User not found."); return; }
+    printf("\n===== EDIT PROFILE (User ID %d) =====\n", userId);
+    name = readLineDynamic("New name (Enter keeps current): ");
+    if (name == NULL) return;
+    email = readLineDynamic("New email (Enter keeps current): ");
+    if (email == NULL) { free(name); return; }
+    password = readLineDynamic("New password (Enter keeps current): ");
+    if (password == NULL) { free(name); free(email); return; }
+    if (name[0] != '\0' && strlen(name) >= MAX_NAME_LEN) {
+        puts("Name is too long; no changes made."); free(name); free(email); free(password); return;
+    }
+    if (email[0] != '\0') {
+        int existing = findUserByEmail(email);
+        if (strchr(email, '@') == NULL || strchr(email, '.') == NULL || (existing >= 0 && existing != index)) {
+            puts("Email is invalid or already used by another account; no changes made.");
+            free(name); free(email); free(password); return;
+        }
+    }
+    if (password[0] != '\0' && !isStrongPassword(password)) {
+        puts("New password must be 6+ characters with upper/lowercase, digit, and special character; no changes made.");
+        free(name); free(email); free(password); return;
+    }
+    if (name[0] != '\0') (void)snprintf(users[index].name, sizeof(users[index].name), "%s", name);
+    if (email[0] != '\0') (void)snprintf(users[index].email, sizeof(users[index].email), "%s", email);
+    if (password[0] != '\0') (void)snprintf(users[index].password, sizeof(users[index].password), "%s", password);
+    saveAllData();
+    puts("Profile updated successfully.");
+    free(name); free(email); free(password);
 }
