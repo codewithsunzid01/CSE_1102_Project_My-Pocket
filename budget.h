@@ -29,7 +29,7 @@
 #define MAX_TOKEN_LEN 30
 #define MAX_MESSAGE_LEN 100
 
-typedef enum { INCOME, EXPENSE, INTERNAL_TRANSACTION } TransactionType;
+typedef enum { INCOME, EXPENSE, INTERNAL_TRANSACTION, SAVINGS_DEPOSIT, SAVINGS_WITHDRAWAL } TransactionType;
 typedef enum { FOOD, TRANSPORT, EDUCATION, MEDICAL, ENTERTAINMENT, SHOPPING, RENT, SAVINGS, OTHERS } CategoryType;
 typedef enum { EQUAL_SPLIT, CUSTOM_SPLIT } SplitType;
 typedef enum { NORMAL_REMINDER, RECURRING_REMINDER } ReminderType;
@@ -189,6 +189,8 @@ void addDaysToDate(char *date, int days);
 const char *categoryToString(CategoryType category);
 const char *transactionTypeToString(TransactionType type);
 const char *splitTypeToString(SplitType type);
+void formatMonthName(const char *isoMonth, char *buffer, size_t bufferSize);
+void formatDateDisplay(const char *isoDate, char *buffer, size_t bufferSize);
 CategoryType promptCategory(void);
 int isValidUser(int userId);
 
@@ -221,7 +223,6 @@ void saveRecurringExpenses(void);
 /* Budget and income */
 void manageIncome(int userId);
 void manageBudget(int userId);
-void manageSavings(int userId);
 void addIncome(int userId, double amount);
 void setBudget(int userId, double amount);
 double calculateRemainingBudget(int userId);
@@ -242,6 +243,7 @@ double calculateFutureBalance(int userId);
 void showSectorWiseExpenses(int userId);
 double getCategoryExpenseTotal(int userId, CategoryType category);
 void showMonthlyReview(int userId);
+void exportTransactionsCsv(int userId);
 
 /* Search and tokenization */
 void searchTransactions(int userId);
@@ -284,6 +286,8 @@ void recordInternalTransaction(int fromUserId, int toUserId, double amount, cons
 /* Alerts and planning */
 void checkBudgetAlert(int userId);
 void showFinancialPlanning(int userId);
+void savingsManagement(int userId);
+double calculateSavingsBalance(int userId);
+void showEventSettlementSuggestions(int eventId);
 
 #endif
-
