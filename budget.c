@@ -61,6 +61,17 @@ void setBudget(int userId, double amount)
     char month[MAX_MONTH_LEN];
     if (index < 0) { puts("User not found."); return; }
     if (!isfinite(amount) || amount <= 0.0) { puts("Budget must be a positive amount."); return; }
+    {
+        double income = calculateTotalIncome(userId);
+        if (income <= 0.0) {
+            puts("Record this month's income before setting a budget.");
+            return;
+        }
+        if (amount > income) {
+            printf("Budget cannot exceed this month's recorded income (%.2f BDT).\n", income);
+            return;
+        }
+    }
 
     currentMonth(month);
     budgetIndex = findCurrentBudget(userId);
@@ -102,8 +113,13 @@ void manageBudget(int userId)
         puts("1. Set/update monthly budget\n2. View budget status\n3. Check budget alert\n4. Back");
         choice = readInt("Choose: ", 1, 4);
         if (choice == 1) {
-            double amount = readDouble("Enter your total budget for this month (BDT): ", 0.01, 1000000000000.0);
-            setBudget(userId, amount);
+            double income = calculateTotalIncome(userId);
+            if (income <= 0.0) {
+                puts("Record this month's income first; a budget cannot exceed income.");
+            } else {
+                double amount = readDouble("Enter your total budget for this month (BDT): ", 0.01, income);
+                setBudget(userId, amount);
+            }
         } else if (choice == 2) {
             bindex = findCurrentBudget(userId);
             if (bindex < 0) {
@@ -118,6 +134,48 @@ void manageBudget(int userId)
             }
         } else if (choice == 3) {
             checkBudgetAlert(userId);
+        } else {
+            return;
+        }
+    }
+}
+
+
+/* Savings target is a monthly target, so it cannot exceed recorded monthly income. */
+void manageSavings(int userId)
+{
+    int index = findUserById(userId);
+    int choice;
+    if (index < 0) { puts("User not found."); return; }
+
+    for (;;) {
+        double income = calculateTotalIncome(userId);
+        double expense = calculateTotalExpense(userId);
+        double saved = income - expense;
+
+        puts("\n========== SAVINGS MANAGEMENT ==========");
+        printf("Income recorded this month : %.2f BDT\n", income);
+        printf("Expenses this month        : %.2f BDT\n", expense);
+        printf("Net savings this month     : %.2f BDT\n", saved);
+        printf("Monthly savings target     : %.2f BDT\n", users[index].savings_goal);
+        if (users[index].savings_goal > 0.0) {
+            double gap = users[index].savings_goal - saved;
+            if (gap <= 0.0) puts("Monthly savings target reached!");
+            else printf("Still needed this month: %.2f BDT\n", gap);
+        }
+
+        puts("1. Set/update monthly savings target\n2. Refresh savings status\n3. Back");
+        choice = readInt("Choose: ", 1, 3);
+        if (choice == 1) {
+            if (income <= 0.0) {
+                puts("Record this month's income first before setting a savings target.");
+                continue;
+            }
+            users[index].savings_goal = readDouble("Enter monthly savings target (BDT): ", 0.0, income);
+            saveAllData();
+            puts("Monthly savings target saved.");
+        } else if (choice == 2) {
+            continue;
         } else {
             return;
         }
