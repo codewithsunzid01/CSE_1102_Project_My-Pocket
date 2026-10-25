@@ -43,3 +43,24 @@ help:
 	@echo "make       - compile and run MyPocket"
 	@echo "make build - compile only"
 	@echo "make clean - remove build files"
+
+# Core regression tests run in an isolated sandbox so your real data/ is untouched.
+TEST_TARGET = $(BUILD_DIR)/test_core$(if $(filter Windows_NT,$(OS)),.exe,)
+TEST_SOURCES = $(filter-out $(SRC_DIR)/main.c,$(SOURCES))
+
+.PHONY: test
+
+test: $(TEST_TARGET)
+ifeq ($(OS),Windows_NT)
+	@if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+	@if not exist $(BUILD_DIR)\\test_sandbox mkdir $(BUILD_DIR)\\test_sandbox
+	@if not exist $(BUILD_DIR)\\test_sandbox\\data mkdir $(BUILD_DIR)\\test_sandbox\\data
+	@cd /d $(BUILD_DIR)\\test_sandbox && ..\\test_core.exe
+else
+	@mkdir -p $(BUILD_DIR)/test_sandbox/data
+	@cd $(BUILD_DIR)/test_sandbox && ../test_core
+endif
+
+$(TEST_TARGET): tests/test_core.c $(TEST_SOURCES) includefile/budget.h
+	@$(MKDIR_BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_core.c $(TEST_SOURCES) -o $@
