@@ -32,8 +32,9 @@ void user_menu(int userId)
         puts("7. Financial summary and monthly review");
         puts("8. Group events and expense sharing");
         puts("9. Financial planning");
-        puts("10. Logout");
-        choice = readInt("Choose an option: ", 1, 10);
+        puts("10. Savings management");
+        puts("11. Logout");
+        choice = readInt("Choose an option: ", 1, 11);
         switch (choice) {
             case 1: manageIncome(userId); break;
             case 2: manageBudget(userId); break;
@@ -77,7 +78,8 @@ void user_menu(int userId)
             }
             case 8: event_dashboard(userId); break;
             case 9: showFinancialPlanning(userId); break;
-            case 10: puts("Logging out..."); return;
+            case 10: manageSavings(userId); break;
+            case 11: puts("Logging out..."); return;
             default: puts("Invalid choice."); break;
         }
     }
