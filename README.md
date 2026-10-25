@@ -1,105 +1,104 @@
-# MyPocket — Student Budget Management System
 
-A console-based C11 project for managing student income, budgets, expenses, reminders, recurring expenses, financial summaries, search, and group expense sharing.
+# MyPocket — Student Budget & Financial Planning System
+
+MyPocket is a console-based C11 lab project for students to manage income, expenses, monthly budgets, savings, reminders, recurring costs, financial reports, and shared group expenses.
 
 ## Requirements
 
 - GCC (or another C11-compatible compiler)
-- GNU Make (make or mingw32-make on some Windows installations)
+- GNU Make (`make` or `mingw32-make` with MinGW on Windows)
 
 ## Build and run
 
-From the MyPocket project directory:
+From the `MyPocket` project directory:
 
-sh
-make
-
-
-The default target compiles the application and starts the interactive menu. To compile without starting it:
-
-sh
+```sh
 make build
+./mypocket
+```
 
+On Windows PowerShell:
 
-Other commands:
+```powershell
+mingw32-make build
+.\mypocket.exe
+```
 
-sh
+Useful commands:
+
+```sh
 make clean
+make test
 ./mypocket --help
 ./mypocket --version
 ./mypocket --stats
+```
 
-
-On Windows, the executable is `mypocket.exe`; use `mingw32-make` if that is the Make executable installed with MinGW. Depending on the shell, launch the executable as `mypocket.exe --help`.
+`make test` builds and runs the core regression tests inside an isolated sandbox under `build/`, so it does not overwrite your actual `data/` files.
 
 ## Features
 
-- Multi-user registration and login using email
-- Password-strength checks
-- Monthly/additional income recording
-- Monthly budget creation, update, remaining amount, and alerts
-- Expense entry with category and description
-- Transaction history, category filtering, and token-based search
-- Reminder creation, completion, overdue/upcoming reminder checks
-- Recurring expenses and upcoming expense projection
-- Financial summary, sector-wise expense report, and month-to-month review
-- Financial planning and projected balance
-- Group events, participants, expense splitting, and event settlement transfers
-- File persistence under `data/` across program restarts
-- Dynamic input allocation, validation, structures, unions, enums, recursion, bitwise status flags, multiple source files, and a Makefile
+- **Accounts:** registration, login, password-strength checks, and profile editing.
+- **Income:** record additional/monthly income; view, edit, and delete financial records.
+- **Budget:** create/update the current month's budget, see spending and remaining budget, receive alerts, and delete the current month's budget. A budget must be set only after income is recorded and cannot exceed the current month's recorded income.
+- **Expenses:** add categorized expenses, view transaction history, filter by category, search by keywords, and edit/delete ordinary financial records.
+- **Savings:** record deposits and withdrawals, view actual savings balance and goal progress, update/clear the goal, and edit/delete savings transactions. Deposits cannot exceed available balance and withdrawals cannot exceed saved funds.
+- **Reminders/calendar:** add, view, complete, edit, and delete reminders; inspect overdue and upcoming reminders.
+- **Recurring expenses:** add, view, edit, delete, and process recurring expenses; estimate upcoming costs.
+- **Financial reports:** current-month summary, category-wise expenses, month-to-month comparison, projected balance, and CSV export for Excel/spreadsheets.
+- **Group events:** create/edit/delete empty events, add/remove participants, record expenses with equal/custom shares, see who owes whom, and edit/delete event expenses and settlement transfers. Linked records are guarded to reduce accidental balance corruption.
+- **Local persistence:** records are saved under `data/` in `.txt` files and reloaded at startup.
 
-## Data storage
+## Data storage and privacy
 
-The program stores local text files in `data/` (`users.txt`, `transactions.txt`, `budgets.txt`, `events.txt`, `fundings.txt`, `reminders.txt`, and `recurring.txt`). These files use a versioned hexadecimal text encoding so nested structures and unions can be restored exactly; they are text files, but their record lines are machine-oriented rather than directly readable field-by-field. Keep the `data/` folder on your computer to retain data. The program does not create a `.gitignore` file; do not add the personal `data/` files to Git commits. Passwords are stored as plain text inside the encoded records for this educational demo; do not use real or reused passwords.
+The program stores `users.txt`, `transactions.txt`, `budgets.txt`, `events.txt`, `fundings.txt`, `reminders.txt`, and `recurring.txt` under `data/`. These use the versioned `MYPocket-TEXT-HEX-v1` encoding: files are text, but the record lines are machine-oriented hexadecimal rather than field-by-field readable text. Do not edit these files manually.
 
-## Notes
+No `.gitignore` file is included, as requested. **Do not stage or commit `data/` files to GitHub** because they may contain personal financial records. This educational project stores passwords in its local encoded records without cryptographic hashing; do not use real or reused passwords or sensitive personal data.
 
-- Event participants must already have registered accounts; add them by user ID.
-- A recorded group expense is recorded as an expense transaction for the user who paid the full amount. Shares are saved in the event for settlement calculations.
-- This is an educational console project, not a production-grade financial application.
+The previous `.dat` binary files are not automatically imported. Back up old data before switching storage formats.
 
-### Editing an expense
+## Important behavior
 
-Open **Add expense / view transactions** from the dashboard, then choose **Edit an expense**. Select the expense ID from your own transaction list and enter the corrected amount, category, date, and description. Press Enter at the date or description prompt to keep the existing value. The balance and current-month budget totals are recalculated and saved.
+- A group-event expense is recorded as an expense transaction for the participant who paid the total amount; the event stores each participant's share separately.
+- Settlement transfers update both users' balances and are represented by linked internal transactions. Transfer amounts are checked against the current settlement owed.
+- Editing/deleting an event expense or transfer is restricted when linked settlement data could become inconsistent; correct/delete the dependent transfer first.
+- Deleting a recurring schedule does not delete historical expenses that were already processed.
+- Reminders in this console application do not send operating-system notifications while the app is closed.
+- This is an educational console application, not a production financial product.
 
+## Structured Programming Lab topic coverage
 
-## Implementation notes
-- Transactions retain a general description and also use a `TransactionDetails` union member selected by transaction type (income, expense, or internal transfer), to demonstrate transaction-specific union data.
-- Group-expense and fund-transfer actions check transaction capacity before changing account balances, preventing balance changes when the corresponding records cannot be stored.
-- Passwords are stored in plain text in this educational lab project; do not use real passwords or sensitive personal data.
+1. Variables and data types — IDs, choices, dates, amounts, counters, and flags.
+2. Conditional statements — authentication, validation, budget checks, and settlement checks.
+3. `switch` statements — menu navigation and transaction-type handling.
+4. Loops — repeated menus and record processing.
+5. Iteration — transaction/category totals, event participants, and file records.
+6. Arrays — bounded user, transaction, budget, event, reminder, and share collections.
+7. Strings — names, emails, descriptions, categories, and dates.
+8. String tokenization — keyword-based transaction search.
+9. Structures and enums — user, transaction, budget, event, funding, reminder, and recurring records.
+10. Pointers — record/buffer handling and dynamic input.
+11. Functions — modular feature implementation across multiple `.c` files.
+12. Recursion — recursive monthly transaction summation.
+13. File handling — local text-file persistence.
+14. Date processing — validation, formatting, comparisons, reminders, and recurring expenses.
+15. Header file — `includefile/budget.h`.
+16. Multiple source files — modules under `src/`.
+17. Makefile — build and test automation.
 
-## Structured Programming Lab Topic Coverage
+Additional concepts: `argc/argv`, `malloc/realloc/free`, unions, and bitwise status flags.
 
-The proposal's 17 topics are represented in the code as follows:
+## Project layout
 
-1. **Variables and data types** — user IDs, choices, dates, amounts, counters, and flags.
-2. **Conditional statements (`if/else`)** — authentication, input validation, budgets, and event/fund checks.
-3. **`switch` statement** — main dashboard navigation and transaction-type conversion.
-4. **Loops** — repeated menus and record processing.
-5. **Iteration** — transaction totals, category totals, event participants, and file records.
-6. **Arrays** — bounded collections of users, transactions, budgets, events, reminders, and shares.
-7. **Strings** — names, email addresses, descriptions, categories, and ISO-formatted dates.
-8. **String tokenization** — `strtok`-based keyword search in `src/search.c`.
-9. **Structures and `enum`** — user, transaction, budget, event, funding, reminder, and recurring-expense records.
-10. **Pointers** — passing records and buffers to functions; dynamic input buffers.
-11. **Functions** — modules split across authentication, budget, transactions, events, reminders, search, and summaries.
-12. **Recursion** — recursive monthly transaction summation in `src/summary.c`.
-13. **File handling** — text-file save/load under `data/` using a versioned hex encoding.
-14. **Date processing** — date validation, comparison, day arithmetic, reminders, and recurring expenses.
-15. **Header file** — `includefile/budget.h`.
-16. **Multiple `.c` files** — implementation split across `src/` modules.
-17. **Makefile** — compiles all source modules with C11 warnings enabled.
+```text
+MyPocket/
+  Makefile
+  README.md
+  TESTING_NOTES.md
+  includefile/budget.h
+  src/*.c
+  tests/test_core.c
+  data/                 # created/used locally at runtime
+```
 
-Additional demonstration: the `TransactionDetails` union stores the type-specific note for income, expense, or internal-transfer transactions. `argc/argv`, dynamic allocation (`malloc/realloc/free`), and bitwise status flags are also included.
-
-## Verification status
-
-See `TESTING_NOTES.md` for the features exercised and the environments not available for testing. The source has been built with GCC and strict warning flags. A native Windows/MinGW build must still be run on a Windows setup before submission; it has not been represented as verified here.
-
-### Keeping data only on your computer
-
-- MyPocket creates `data/` automatically when it saves data.
-- User records are stored locally in `.txt` files under `data/`.
-- No `.gitignore` file is included, as requested. If you use Git, do not stage or commit the `data/` folder; keep it local on your computer.
-- The `.txt` files use a versioned hexadecimal text encoding to preserve all C structure fields, including nested event data. They can be opened in Notepad, but record lines are not intended to be edited manually.
-- The previous `.dat` binary files are not automatically imported. Start with fresh `.txt` storage or keep a backup of any old `.dat` files before switching.
+See `TESTING_NOTES.md` for the checks actually performed and remaining environment limitations.
