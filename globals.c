@@ -20,3 +20,4 @@ int reminderCount = 0;
 
 RecurringExpense recurringExpenses[MAX_RECURRING];
 int recurringCount = 0;
+
