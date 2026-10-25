@@ -37,7 +37,8 @@ void addReminder(int userId)
     reminder->type = type == 1 ? NORMAL_REMINDER : RECURRING_REMINDER;
     reminder->completed = 0;
     saveAllData();
-    printf("Reminder #%d saved for %s.\n", reminder->reminderId, reminder->date);
+    { char displayDate[64]; formatDateDisplay(reminder->date, displayDate, sizeof(displayDate));
+      printf("Reminder #%d saved for %s.\n", reminder->reminderId, displayDate); }
     if (reminder->type == RECURRING_REMINDER)
         puts("Note: this label does not auto-repeat; use Recurring Expenses for automatic scheduled expenses.");
     free(title);
@@ -90,7 +91,9 @@ void checkUpcomingReminders(int userId)
             if (days < 0) printf("OVERDUE by %d day(s): ", -days);
             else if (days == 0) printf("DUE TODAY: ");
             else printf("Due in %d day(s): ", days);
-            printf("%s (%s)\n", r->title, r->date);
+            char displayDate[64];
+            formatDateDisplay(r->date, displayDate, sizeof(displayDate));
+            printf("%s (%s)\n", r->title, displayDate);
             found = 1;
         }
     }
@@ -102,15 +105,61 @@ void reminder_dashboard(int userId)
     int choice;
     for (;;) {
         puts("\n===== REMINDER & CALENDAR DASHBOARD =====");
-        puts("1. Add reminder\n2. View my reminders\n3. Mark reminder completed\n4. Check upcoming reminders\n5. Back");
-        choice = readInt("Choose: ", 1, 5);
+        puts("1. Add reminder\n2. View my reminders\n3. Mark reminder completed\n4. Check upcoming reminders\n5. Edit reminder\n6. Delete reminder\n7. Back");
+        choice = readInt("Choose: ", 1, 7);
         switch (choice) {
             case 1: addReminder(userId); break;
             case 2: viewReminders(userId); break;
             case 3: markReminderCompleted(userId); break;
             case 4: checkUpcomingReminders(userId); break;
-            case 5: return;
+            case 5: editReminder(userId); break;
+            case 6: deleteReminder(userId); break;
+            case 7: return;
             default: break;
         }
     }
+}
+
+void editReminder(int userId)
+{
+    int id, index = -1;
+    char *title = NULL, *date = NULL;
+    viewReminders(userId);
+    id = readInt("Reminder ID to edit (0 to cancel): ", 0, INT_MAX);
+    if (id == 0) return;
+    for (int i = 0; i < reminderCount; ++i)
+        if (reminders[i].userId == userId && reminders[i].reminderId == id) { index = i; break; }
+    if (index < 0) { puts("Reminder not found in your account."); return; }
+    title = readLineDynamic("New title (Enter keeps current): ");
+    if (title == NULL) return;
+    date = readLineDynamic("New date YYYY-MM-DD (Enter keeps current): ");
+    if (date == NULL) { free(title); return; }
+    if (title[0] != '\0' && strlen(title) >= MAX_TITLE_LEN) {
+        puts("Title too long; no changes made."); free(title); free(date); return;
+    }
+    if (date[0] != '\0' && !isValidDate(date)) {
+        puts("Invalid date; no changes made."); free(title); free(date); return;
+    }
+    if (title[0] != '\0') (void)snprintf(reminders[index].title, sizeof(reminders[index].title), "%s", title);
+    if (date[0] != '\0') (void)snprintf(reminders[index].date, sizeof(reminders[index].date), "%s", date);
+    saveAllData();
+    puts("Reminder updated.");
+    free(title); free(date);
+}
+
+void deleteReminder(int userId)
+{
+    int id, index = -1;
+    viewReminders(userId);
+    id = readInt("Reminder ID to delete (0 to cancel): ", 0, INT_MAX);
+    if (id == 0) return;
+    for (int i = 0; i < reminderCount; ++i)
+        if (reminders[i].userId == userId && reminders[i].reminderId == id) { index = i; break; }
+    if (index < 0) { puts("Reminder not found in your account."); return; }
+    if (readInt("Delete this reminder? 1. Yes  2. No: ", 1, 2) != 1) { puts("Cancelled."); return; }
+    for (int i = index; i < reminderCount - 1; ++i) reminders[i] = reminders[i + 1];
+    --reminderCount;
+    memset(&reminders[reminderCount], 0, sizeof(reminders[reminderCount]));
+    saveAllData();
+    puts("Reminder deleted.");
 }
