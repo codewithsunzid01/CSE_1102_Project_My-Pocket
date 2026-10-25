@@ -1,6 +1,8 @@
 #include "budget.h"
 #include <math.h>
 
+static double sumCategoryForMonth(int userId, CategoryType category, const char *month);
+
 /* Recursive traversal demonstrates recursion while keeping calculations consistent. */
 static double sumTransactionsForMonth(int userId, TransactionType type, CategoryType category,
                                       int categoryFilter, const char *month, int index)
@@ -112,7 +114,8 @@ void showFinancialSummary(int userId)
     if (expense > 0.0) flags |= HAS_EXPENSE;
 
     puts("\n================ FINANCIAL SUMMARY ================");
-    printf("Profile: %s (ID %d)\nMonth: %s\n", users[index].name, userId, month);
+    { char displayMonth[40]; formatMonthName(month, displayMonth, sizeof(displayMonth));
+      printf("Profile: %s (ID %d)\nMonth: %s\n", users[index].name, userId, displayMonth); }
     printf("Income recorded this month : %10.2f BDT\n", income);
     printf("Expenses this month        : %10.2f BDT\n", expense);
     printf("Net this month             : %10.2f BDT\n", income - expense);
@@ -153,13 +156,24 @@ void showMonthlyReview(int userId)
         if (value > highestAmount) { highestAmount = value; highest = (CategoryType)category; }
     }
     puts("\n================ MONTHLY REVIEW ================");
-    printf("Review month: %s\n", month);
+    { char displayMonth[40], displayPrevious[40];
+      formatMonthName(month, displayMonth, sizeof(displayMonth));
+      formatMonthName(previous, displayPrevious, sizeof(displayPrevious));
+      printf("Review month: %s\n", displayMonth);
     printf("Income: %.2f BDT | Expenses: %.2f BDT | Net saving: %.2f BDT\n", income, expense, savings);
     if (income > 0.0) printf("Savings rate: %.1f%% of income\n", savings * 100.0 / income);
     else puts("Savings rate: unavailable (no income recorded this month)");
     if (highestAmount > 0.0) printf("Highest expense sector: %s (%.2f BDT)\n", categoryToString(highest), highestAmount);
     else puts("No expenses recorded this month.");
-    printf("Previous month (%s): income %.2f BDT, expenses %.2f BDT\n", previous, previousIncome, previousExpense);
+      printf("Previous month (%s): income %.2f BDT, expenses %.2f BDT\n", displayPrevious, previousIncome, previousExpense);
+      puts("Category comparison (this month vs previous month):");
+      for (int category = FOOD; category <= OTHERS; ++category) {
+          double nowAmount = sumCategoryForMonth(userId, (CategoryType)category, month);
+          double prevAmount = sumCategoryForMonth(userId, (CategoryType)category, previous);
+          if (nowAmount > 0.0 || prevAmount > 0.0)
+              printf("  %-16s %8.2f vs %8.2f BDT\n", categoryToString((CategoryType)category), nowAmount, prevAmount);
+      }
+    }
     if (expense > previousExpense) printf("Expenses increased by %.2f BDT compared with last month.\n", expense - previousExpense);
     else printf("Expenses decreased by %.2f BDT (or stayed lower) compared with last month.\n", previousExpense - expense);
     if (users[index].monthly_budget > 0.0) {
@@ -167,4 +181,54 @@ void showMonthlyReview(int userId)
         printf("Budget utilisation: %.1f%%\n", expense * 100.0 / users[index].monthly_budget);
         printf("Remaining budget: %.2f BDT\n", remaining);
     }
+}
+
+
+static double sumCategoryForMonth(int userId, CategoryType category, const char *month)
+{
+    double total = 0.0;
+    for (int i = 0; i < transactionCount; ++i) {
+        const Transaction *t = &transactions[i];
+        if (t->userId == userId && t->type == EXPENSE && t->category == category &&
+            strncmp(t->date, month, 7U) == 0) total += t->amount;
+    }
+    return total;
+}
+
+static void writeCsvField(FILE *file, const char *value)
+{
+    fputc('"', file);
+    if (value != NULL) {
+        while (*value != '\0') {
+            if (*value == '"') fputc('"', file);
+            fputc(*value++, file);
+        }
+    }
+    fputc('"', file);
+}
+
+void exportTransactionsCsv(int userId)
+{
+    char path[80];
+    FILE *file;
+    int exported = 0;
+    if (!isValidUser(userId)) { puts("User not found."); return; }
+    (void)snprintf(path, sizeof(path), "data/transactions_user_%d.csv", userId);
+    file = fopen(path, "w");
+    if (file == NULL) { printf("Could not create %s. Check the data folder permissions.\n", path); return; }
+    fputs("Transaction ID,Date,Type,Category,Amount,Description\n", file);
+    for (int i = 0; i < transactionCount; ++i) {
+        const Transaction *t = &transactions[i];
+        if (t->userId != userId) continue;
+        fprintf(file, "%d,", t->transactionId);
+        writeCsvField(file, t->date); fputc(',', file);
+        writeCsvField(file, transactionTypeToString(t->type)); fputc(',', file);
+        writeCsvField(file, categoryToString(t->category));
+        fprintf(file, ",%.2f,", t->amount);
+        writeCsvField(file, t->description);
+        fputc('\n', file);
+        ++exported;
+    }
+    if (fclose(file) != 0) { puts("CSV export could not be completed cleanly."); return; }
+    printf("Exported %d transaction(s) to %s. Open this file with Excel or another spreadsheet app.\n", exported, path);
 }
