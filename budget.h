@@ -1,4 +1,3 @@
-
 #ifndef BUDGET_H
 #define BUDGET_H
 
@@ -222,6 +221,7 @@ void saveRecurringExpenses(void);
 /* Budget and income */
 void manageIncome(int userId);
 void manageBudget(int userId);
+void manageSavings(int userId);
 void addIncome(int userId, double amount);
 void setBudget(int userId, double amount);
 double calculateRemainingBudget(int userId);
