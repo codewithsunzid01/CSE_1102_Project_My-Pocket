@@ -183,8 +183,37 @@ const char *transactionTypeToString(TransactionType type)
         case INCOME: return "Income";
         case EXPENSE: return "Expense";
         case INTERNAL_TRANSACTION: return "Internal transfer";
+        case SAVINGS_DEPOSIT: return "Savings deposit";
+        case SAVINGS_WITHDRAWAL: return "Savings withdrawal";
         default: return "Unknown";
     }
+}
+
+void formatMonthName(const char *isoMonth, char *buffer, size_t bufferSize)
+{
+    static const char *names[] = {"January", "February", "March", "April", "May", "June",
+                                  "July", "August", "September", "October", "November", "December"};
+    int year = 0, month = 0;
+    if (buffer == NULL || bufferSize == 0U) return;
+    if (isoMonth == NULL || sscanf(isoMonth, "%4d-%2d", &year, &month) != 2 || month < 1 || month > 12) {
+        (void)snprintf(buffer, bufferSize, "%s", isoMonth != NULL ? isoMonth : "Unknown month");
+        return;
+    }
+    (void)snprintf(buffer, bufferSize, "%s %04d", names[month - 1], year);
+}
+
+void formatDateDisplay(const char *isoDate, char *buffer, size_t bufferSize)
+{
+    static const char *names[] = {"January", "February", "March", "April", "May", "June",
+                                  "July", "August", "September", "October", "November", "December"};
+    int year, month, day;
+    if (buffer == NULL || bufferSize == 0U) return;
+    if (isoDate == NULL || strlen(isoDate) != 10U ||
+        sscanf(isoDate, "%4d-%2d-%2d", &year, &month, &day) != 3 || month < 1 || month > 12 || day < 1 || day > 31) {
+        (void)snprintf(buffer, bufferSize, "%s", isoDate != NULL ? isoDate : "Unknown date");
+        return;
+    }
+    (void)snprintf(buffer, bufferSize, "%s %d, %04d", names[month - 1], day, year);
 }
 
 const char *splitTypeToString(SplitType type)
