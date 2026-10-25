@@ -196,6 +196,7 @@ int isValidUser(int userId);
 
 /* Authentication */
 int registerUser(void);
+void editProfile(int userId);
 int loginUser(void);
 int authenticateUser(const char *email, const char *password);
 int findUserById(int userId);
@@ -223,6 +224,7 @@ void saveRecurringExpenses(void);
 /* Budget and income */
 void manageIncome(int userId);
 void manageBudget(int userId);
+void deleteCurrentBudget(int userId);
 void addIncome(int userId, double amount);
 void setBudget(int userId, double amount);
 double calculateRemainingBudget(int userId);
@@ -230,6 +232,8 @@ double calculateRemainingBudget(int userId);
 /* Expenses and transactions */
 void addExpense(int userId);
 void editExpense(int userId);
+void editFinancialTransaction(int userId);
+void deleteFinancialTransaction(int userId);
 void addTransaction(int userId, TransactionType type, CategoryType category, double amount, const char *date, const char *description);
 void viewTransactions(int userId);
 void viewTransactionsByCategory(int userId, CategoryType category);
@@ -255,22 +259,31 @@ void search_and_tokenization_demo(void);
 void addReminder(int userId);
 void viewReminders(int userId);
 void markReminderCompleted(int userId);
+void editReminder(int userId);
+void deleteReminder(int userId);
 void checkUpcomingReminders(int userId);
 void reminder_dashboard(int userId);
 
 /* Recurring and upcoming expenses */
 void addRecurringExpense(int userId);
 void viewRecurringExpenses(int userId);
+void editRecurringExpense(int userId);
+void deleteRecurringExpense(int userId);
 void processRecurringExpenses(int userId);
 void showUpcomingExpenses(int userId);
 double calculateUpcomingExpenseTotal(int userId);
 
 /* Group event and expense sharing */
 void createEvent(int userId);
+void editEvent(int userId);
+void deleteEvent(int userId);
 void viewEvents(int userId);
 int findEventById(int eventId);
 void addParticipantToEvent(int eventId);
+void removeParticipantFromEvent(int eventId);
 void addEventExpense(int eventId);
+void editEventExpense(int eventId);
+void deleteEventExpense(int eventId);
 void splitExpenseEqual(Event *event, EventExpense *expense);
 void splitExpenseCustom(Event *event, EventExpense *expense);
 void viewEventDetails(int eventId);
@@ -279,6 +292,8 @@ double calculateEventNet(int eventId, int userId);
 
 /* Internal funding and transfers */
 void collectFund(int eventId, int collectorUserId);
+void editFunding(int eventId);
+void deleteFunding(int eventId);
 void deductFromUser(int userId, double amount);
 void addToUser(int userId, double amount);
 void recordInternalTransaction(int fromUserId, int toUserId, double amount, const char *date, const char *description);
